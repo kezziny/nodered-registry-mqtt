@@ -16,6 +16,14 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "/lib/stream": ["src/stream/index"],
+      "/lib/stream/*": ["src/stream/*"],
+      "/lib/smartHome": ["src/smartHome/index"],
+      "/lib/smartHome/*": ["src/smartHome/*"],
+      "testHelper": ["src/testHelper/index"],
+      "testHelper/*": ["src/testHelper/*"]
+    }
   }
 }

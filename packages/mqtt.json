@@ -1,6 +1,6 @@
 [
 	{
-		"id": "6df7fc5c-053e-4c2e-b9b5-5ae5887fca0c",
+		"id": "a5230d50-395b-435c-9412-8f75e3d1416f",
 		"name": "Mqtt",
 		"type": "subflow",
 		"info": "",
@@ -11,13 +11,7 @@
 				"y": 40,
 				"wires": [
 					{
-						"id": "a41019ac-2ede-4ffd-a53b-5f625f9ae166"
-					},
-					{
-						"id": "f93c0020-7915-4667-9dc7-b7f2493e1b75"
-					},
-					{
-						"id": "c3f31682-40cc-4a6b-935b-7ce7f359e28f"
+						"id": "1a874618-24a2-4d88-8fff-630efbcdf796"
 					}
 				]
 			}
@@ -29,48 +23,13 @@
 		"icon": "node-red/bridge.svg"
 	},
 	{
-		"id": "a41019ac-2ede-4ffd-a53b-5f625f9ae166",
-		"name": "MqttPlugin",
-		"type": "function",
-		"func": "const $ = global.get(\"registry\");\n\n// Dependencies\nconst nodered_registry_core_1 = await $.get(\"core\");\nconst MqttService_1 = { MqttService: await $.get(\"mqtt.MqttService\") };\n\n// Implementation\nclass MqttPlugin extends Node {\n    constructor() {\n        super(...arguments);\n        this.mqttService = new nodered_registry_core_1.Argument({ required: true, type: MqttService_1.MqttService });\n    }\n    subscribeProperty(args) {\n        args = MqttPlugin.Schema.PropertySchema.eval(args);\n        args.property.requested.on(command => {\n            let payload = {};\n            payload[args.name] = args.outgoingConverter(command);\n            this.mqttService.publish({\n                topic: `${args.topic}/set`,\n                payload,\n                retain: args.retain\n            });\n        });\n        this.mqttService.subscribe({\n            topic: args.topic,\n            callback: (data) => {\n                if (args.name in data.payload) {\n                    args.property.value = args.incomingConverter(data.payload[args.name]);\n                }\n            }\n        });\n    }\n    subscribe(args) {\n        args = MqttPlugin.Schema.Group.eval(args);\n        for (const key in args.group) {\n            if (args.group[key] instanceof nodered_registry_core_1.Property === false)\n                continue;\n            this.subscribeProperty(Object.assign({\n                topic: args.topic,\n                name: key,\n                property: args.group[key],\n                retain: args.retain\n            }, args.properties[key]));\n        }\n    }\n    publish(args) {\n        args = MqttPlugin.Schema.Group.eval(args);\n        let resources = [];\n        for (const key in args.group) {\n            if (args.group[key] instanceof nodered_registry_core_1.Property === false)\n                continue;\n            args.properties[key] = MqttPlugin.Schema.PropertyParser.eval(args.properties[key]);\n        }\n        resources.push(args.group.changed.on(() => {\n            let message = {};\n            for (const key in args.group) {\n                if (args.group[key] instanceof nodered_registry_core_1.Property === false)\n                    continue;\n                message[key] = args.properties[key].outgoingConverter(args.group[key].value);\n            }\n            this.mqttService.publish({ topic: args.topic, payload: message, retain: args.retain });\n        }));\n        this.mqttService.subscribe({\n            topic: `${args.topic}/set`,\n            callback: (data) => {\n                for (const key in data.payload) {\n                    if (!args.properties.hasOwnProperty(key))\n                        continue;\n                    args.group[key].command(args.properties[key].incomingConverter(data.payload[key]));\n                }\n            }\n        });\n        if (!args.restore)\n            return;\n        this.mqttService.subscribe({\n            topic: `${args.topic}`,\n            callback: (data) => {\n                for (const key in data.payload) {\n                    if (!args.properties.hasOwnProperty(key))\n                        continue;\n                    args.group[key].set(args.properties[key].incomingConverter(data.payload[key]));\n                }\n            },\n            nl: true,\n        });\n    }\n}\n(function (MqttPlugin) {\n    let Schema;\n    (function (Schema) {\n        class Converters {\n        }\n        Converters.Identical = (data) => data;\n        Schema.Group = new nodered_registry_core_1.ArgumentMap({\n            topic: { required: true, type: \"string\" },\n            group: { required: true, type: nodered_registry_core_1.PropertyGroup },\n            retain: { required: true, default: false, type: \"boolean\" },\n            restore: { required: true, default: false },\n            properties: { required: true, default: {} },\n        });\n        Schema.PropertySchema = new nodered_registry_core_1.ArgumentMap({\n            topic: { required: true, type: \"string\" },\n            property: { required: true, type: nodered_registry_core_1.Property },\n            name: { required: true, type: \"string\" },\n            incomingConverter: { required: true, default: (context) => Converters.Identical },\n            outgoingConverter: { required: true, default: (context) => Converters.Identical },\n            retain: { required: true, default: false, type: \"boolean\" },\n        });\n        Schema.PropertyParser = new nodered_registry_core_1.ArgumentMap({\n            name: { required: false, type: \"string\" },\n            incomingConverter: { required: true, default: (context) => Converters.Identical },\n            outgoingConverter: { required: true, default: (context) => Converters.Identical },\n        });\n    })(Schema = MqttPlugin.Schema || (MqttPlugin.Schema = {}));\n})(MqttPlugin = exports.MqttPlugin || (exports.MqttPlugin = {}));\n\n\n// Exports\n$.register(\"mqtt.MqttPlugin\", MqttPlugin);",
-		"x": 200,
-		"y": 80,
-		"z": "6df7fc5c-053e-4c2e-b9b5-5ae5887fca0c",
-		"libs": [],
-		"wires": [],
-		"outputs": 0,
-		"noerr": 0,
-		"initialize": "",
-		"finalize": ""
-	},
-	{
-		"id": "f93c0020-7915-4667-9dc7-b7f2493e1b75",
-		"name": "MqttService",
-		"type": "function",
-		"func": "const $ = global.get(\"registry\");\n\n// Dependencies\nconst nodered_registry_core_1 = await $.get(\"core\");\n\n// Implementation\nclass MqttService extends nodered_registry_core_1.Node {\n    constructor() {\n        super(...arguments);\n        this.host = new nodered_registry_core_1.Argument({ required: true, type: \"string\" });\n        this.subscriptions = {};\n    }\n    init(args) {\n        super.init(args);\n        this.status.yellow();\n        this.client = mqtt_1.default.connect(this.host);\n        this.client.on('connect', () => this.status.green());\n        this.client.on('message', (topic, msg) => this.onMessage(topic, msg));\n    }\n    onMessage(topic, message) {\n        try {\n            let payload = JSON.parse(message.toString());\n            this.subscriptions[topic].trigger({ topic, payload });\n        }\n        catch (e) {\n        }\n    }\n    subscribe(args) {\n        args = MqttService.Schema.Subscribe.eval(args);\n        this.client.subscribe(args.topic, { nl: args.nl });\n        if (args.topic in this.subscriptions === false)\n            this.subscriptions[args.topic] = new nodered_registry_core_1.Event();\n        this.subscriptions[args.topic].on(args.callback);\n    }\n    publish(args) {\n        args = MqttService.Schema.Publish.eval(args);\n        this.client.publish(args.topic, JSON.stringify(args.payload), { retain: args.retain });\n    }\n    destructor() {\n        this.client.end();\n        super.destructor();\n    }\n}\n(function (MqttService) {\n    let Schema;\n    (function (Schema) {\n        Schema.Subscribe = new nodered_registry_core_1.ArgumentMap({\n            topic: { required: true, type: \"string\" },\n            callback: { required: true },\n            nl: { required: true, default: false },\n        });\n        Schema.Publish = new nodered_registry_core_1.ArgumentMap({\n            topic: { required: true, type: \"string\" },\n            payload: { required: true },\n            retain: { required: true, default: false, type: \"boolean\" },\n        });\n    })(Schema = MqttService.Schema || (MqttService.Schema = {}));\n})(MqttService = exports.MqttService || (exports.MqttService = {}));\n\n\n// Exports\n$.register(\"mqtt.MqttService\", MqttService);",
-		"x": 200,
-		"y": 120,
-		"z": "6df7fc5c-053e-4c2e-b9b5-5ae5887fca0c",
-		"libs": [
-			{
-				"var": "mqtt_1",
-				"module": "mqtt"
-			}
-		],
-		"wires": [],
-		"outputs": 0,
-		"noerr": 0,
-		"initialize": "",
-		"finalize": ""
-	},
-	{
-		"id": "c3f31682-40cc-4a6b-935b-7ce7f359e28f",
+		"id": "1a874618-24a2-4d88-8fff-630efbcdf796",
 		"name": "Module",
 		"type": "function",
-		"func": "const $ = global.get(\"registry\");\nlet MqttPlugin = await $.get('mqtt.MqttPlugin');\nlet MqttService = await $.get('mqtt.MqttService');\nclass mqtt {\n  static MqttPlugin = MqttPlugin;\n  static MqttService = MqttService;\n}\n\n$.register('mqtt.*', mqtt);",
+		"func": "const $ = global.get(\"registry\");\nclass mqtt {\n}\n\n$.register('mqtt.*', mqtt);",
 		"x": 200,
 		"y": 40,
-		"z": "6df7fc5c-053e-4c2e-b9b5-5ae5887fca0c",
+		"z": "a5230d50-395b-435c-9412-8f75e3d1416f",
 		"libs": [],
 		"wires": [],
 		"outputs": 0,
